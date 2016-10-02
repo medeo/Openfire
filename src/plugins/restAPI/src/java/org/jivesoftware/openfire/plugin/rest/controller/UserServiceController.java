@@ -5,6 +5,8 @@ import java.util.Collection;
 import java.util.List;
 import javax.ws.rs.core.Response;
 import org.apache.log4j.Logger;
+import org.dom4j.Document;
+import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
 import org.jivesoftware.openfire.SessionManager;
 import org.jivesoftware.openfire.SharedGroupException;
@@ -109,10 +111,17 @@ public class UserServiceController {
 
             VCardManager vcardManager = VCardManager.getInstance();
             Element vcard = vcardManager.getVCard(userEntity.getUsername());
-            try {
-                vcardManager.setVCard(userEntity.getUsername(), vcard);
-            } catch (Exception e) {
-                Log.error("Could not create vcard for " + userEntity.getUsername(), e);
+            if (null == vcard) {
+                //vcard = "<vCard xmlns=''vcard-temp''><FN>" + userEntity.getName() + "</FN><N></N><NICKNAME>" + userEntity.getName() + "</NICKNAME></vCard>";
+//                vcard
+                try {
+                    Document document = DocumentHelper.parseText("<vCard xmlns='vcard-temp'><FN>" + userEntity.getName() + "</FN><N></N><NICKNAME>" + userEntity.getName() + "</NICKNAME></vCard>");
+                    vcard = document.getRootElement();
+
+                    vcardManager.setVCard(userEntity.getUsername(), vcard);
+                } catch (Exception e) {
+                    Log.error("Could not create vcard for " + userEntity.getUsername(), e);
+                }
             }
         } else {
             throw new ServiceException("Could not create new user",
