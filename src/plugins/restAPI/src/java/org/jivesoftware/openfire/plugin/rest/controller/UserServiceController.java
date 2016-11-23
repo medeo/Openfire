@@ -70,6 +70,11 @@ public class UserServiceController {
     private LockOutManager lockOutManager;
 
     /**
+     * The vcard manager.
+     */
+    private VCardManager vcardManager;
+
+    /**
      * Gets the single instance of UserServiceController.
      *
      * @return single instance of UserServiceController
@@ -86,6 +91,7 @@ public class UserServiceController {
         userManager = server.getUserManager();
         rosterManager = server.getRosterManager();
         lockOutManager = server.getLockOutManager();
+        vcardManager = VCardManager.getInstance();
     }
 
     /**
@@ -108,21 +114,7 @@ public class UserServiceController {
                         ExceptionType.USER_ALREADY_EXISTS_EXCEPTION, Response.Status.CONFLICT);
             }
             addProperties(userEntity.getUsername(), userEntity.getProperties());
-
-            VCardManager vcardManager = VCardManager.getInstance();
-            Element vcard = vcardManager.getVCard(userEntity.getUsername());
-            if (null == vcard) {
-                //vcard = "<vCard xmlns=''vcard-temp''><FN>" + userEntity.getName() + "</FN><N></N><NICKNAME>" + userEntity.getName() + "</NICKNAME></vCard>";
-//                vcard
-                try {
-                    Document document = DocumentHelper.parseText("<vCard xmlns='vcard-temp'><FN>" + userEntity.getName() + "</FN><N></N><NICKNAME>" + userEntity.getName() + "</NICKNAME></vCard>");
-                    vcard = document.getRootElement();
-
-                    vcardManager.setVCard(userEntity.getUsername(), vcard);
-                } catch (Exception e) {
-                    Log.error("Could not create vcard for " + userEntity.getUsername(), e);
-                }
-            }
+            saveVcard(userEntity);
         } else {
             throw new ServiceException("Could not create new user",
                     "users", ExceptionType.ILLEGAL_ARGUMENT_EXCEPTION, Response.Status.BAD_REQUEST);
@@ -160,6 +152,7 @@ public class UserServiceController {
             }
 
             addProperties(username, userEntity.getProperties());
+            saveVcard(userEntity);
         }
     }
 
@@ -174,6 +167,8 @@ public class UserServiceController {
         userManager.deleteUser(user);
 
         rosterManager.deleteRoster(server.createJID(username, null));
+
+        vcardManager.deleteVCard(username);
     }
 
     /**
@@ -518,6 +513,23 @@ public class UserServiceController {
         } catch (UserNotFoundException e) {
             throw new ServiceException("Could not get user roster", username, ExceptionType.USER_NOT_FOUND_EXCEPTION,
                     Response.Status.NOT_FOUND, e);
+        }
+    }
+
+    /**
+     * Creates or updates the vcard for the UserEnitity
+     *
+     * @param userEntity
+     */
+    private void saveVcard(UserEntity userEntity) {
+        if (userEntity != null && !username.isEmpty()) {
+            try {
+                Document document = DocumentHelper.parseText("<vCard xmlns='vcard-temp'><FN>" + userEntity.getName() + "</FN><N></N><NICKNAME>" + userEntity.getName() + "</NICKNAME></vCard>");
+                Element vcard = document.getRootElement();
+                vcardManager.setVCard(userEntity.getUsername(), vcard);
+            } catch (Exception e) {
+                Log.error("Could not create vcard for " + userEntity.getUsername(), e);
+            }
         }
     }
 }
