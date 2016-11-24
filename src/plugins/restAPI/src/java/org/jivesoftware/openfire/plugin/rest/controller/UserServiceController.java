@@ -522,9 +522,13 @@ public class UserServiceController {
      * @param userEntity
      */
     private void saveVcard(UserEntity userEntity) {
-        if (userEntity != null && !username.isEmpty()) {
+        if (userEntity != null) {
             try {
-                Document document = DocumentHelper.parseText("<vCard xmlns='vcard-temp'><FN>" + userEntity.getName() + "</FN><N></N><NICKNAME>" + userEntity.getName() + "</NICKNAME></vCard>");
+                Document document = DocumentHelper.parseText(   "<vCard xmlns='vcard-temp'><FN>" +
+                                                                userEntity.getName() +
+                                                                "</FN><N></N><NICKNAME>" +
+                                                                userEntity.getName() +
+                                                                "</NICKNAME></vCard>");
                 Element vcard = document.getRootElement();
                 vcardManager.setVCard(userEntity.getUsername(), vcard);
             } catch (Exception e) {
